@@ -10,13 +10,15 @@ var spotify = new Spotify(keys.spotify);
 var command = process.argv[2];
 
 // Pull band data
-function concertThis() {
+function concertThis(artistName) {
 
-  var artistNameArr = [];
-  for (var i = 3; i < process.argv.length; i++) {
-    artistNameArr.push(process.argv[i]);
+  if (process.argv[3]) {
+    var artistNameArr = [];
+    for (var i = 3; i < process.argv.length; i++) {
+      artistNameArr.push(process.argv[i]);
+    }
+    var artistName = artistNameArr.join("+");
   }
-  var artistName = artistNameArr.join("+");
 
   var queryUrl = "https://rest.bandsintown.com/artists/" + artistName + "/events?app_id=codingbootcamp";
 
@@ -42,14 +44,16 @@ function concertThis() {
 }
 
 // Pull Spotify data
-function spotifyThis() {
+function spotifyThis(trackName) {
 
-  var trackNameArr = [];
-  for (var i = 3; i < process.argv.length; i++) {
-    trackNameArr.push(process.argv[i]);
+  if (process.argv[3]) {
+    var trackNameArr = [];
+    for (var i = 3; i < process.argv.length; i++) {
+      trackNameArr.push(process.argv[i]);
+    }
+    var trackName = trackNameArr.join("+");
   }
-  var trackName = trackNameArr.join("+");
-
+  
   spotify.search({ type: 'track', query: trackName }, function(err, data) {
     if (err) {
       return console.log('Error occurred: ' + err);
@@ -57,24 +61,14 @@ function spotifyThis() {
 
     var trackData = data.tracks.items;
 
-    function findArtists(trackNum) {
-      var albumArtists = [];
-      for (var j = 0; i < trackData[i].album.artists.length; i++) {
-        albumArtists.push(trackData[trackNum].album.artists[j].name);
-      }
-      return albumArtists;
-    }
-
     // For each track item
     for (var i = 0; i < trackData.length; i++) {
       var artists = [];
 
       // Loop through the artists in each album
-      // HALP! THIS NEEDS RECURSION
-      for (var j = 0; i < trackData[i].album.artists.length; i++) {
+      for (var j = 0; j < trackData[i].album.artists.length; j++) {
         artists.push(trackData[i].album.artists[j].name);
       }
-      // artists.push(findArtists(i));
       
       var songName = trackData[i].name;
       var previewURL = trackData[i].preview_url;
@@ -84,38 +78,48 @@ function spotifyThis() {
       console.log(
         i +
         "\nArtist(s): " + artists +
-        "\nThe first artist is: " + trackData[i].album.artists[0].name +
         "\nSong name: " + songName +
         "\nPreview song: " + previewURL +
         "\nAlbum: " + albumName +
         "\n---------------------------"
       );
     }
-  });
+  })
 }
 
 // Pull movie data
-function movieThis() {
+function movieThis(movieName) {
 
-  // Default movie will be Mr. Nobody
-  var movieNameArr = ["Mr.", "Nobody"];
-  for (var i = 3; i < process.argv.length; i++) {
-    // When arguments are provided, clear out the default values in the array
-    movieNameArr = [];
-    movieNameArr.push(process.argv[i]);
+  var movieNameArr = [];
+
+  // No argument passed
+  if (!movieName) {
+    // Default movie will be Mr. Nobody
+    movieName = "Mr. Nobody";
   }
-  var movieName = movieNameArr.join("+");
+
+  if (process.argv[3]) {
+    var movieNameArr = [];
+    for (var i = 3; i < process.argv.length; i++) {
+      movieNameArr.push(process.argv[i]);
+    }
+    var movieName = movieNameArr.join("+");
+  }
 
   var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
+  console.log(queryUrl);
 
   request(queryUrl, (error, response, body) => {
     if(!error && response.statusCode === 200) {
       var movieData = JSON.parse(body);
+
+      var imdbRating = movieData.Ratings[0] ? movieData.Ratings[0].Value : "N/A";
+      var rottenTomatoesRating = movieData.Ratings[1] ? movieData.Ratings[1].Value : "N/A";
       console.log(
         "Title: " + movieData.Title + "\n" +
         "Release Year: " + movieData.Year + "\n" +
-        "IMDB: " + movieData.Ratings[0].Value + "\n" +
-        "Rotten Tomatoes: " + movieData.Ratings[1].Value + "\n" +
+        "IMDB: " + imdbRating + "\n" +
+        "Rotten Tomatoes: " + rottenTomatoesRating + "\n" +
         "Country: " + movieData.Country + "\n" +
         "Language: " + movieData.Language + "\n" +
         "Plot: " + movieData.Plot + "\n" +
@@ -128,22 +132,32 @@ function movieThis() {
 // ???
 function doWhatItSays() {
   var randomCommandArr = [];
-  randomCommandArr.push(fs.readFile("random.txt"));
+  fs.readFile("random.txt", "utf8", function(err, data){
+    randomCommandArr = data.split(" ");
+    command = randomCommandArr.shift();
+    var randomQuery = randomCommandArr.join(" ");
+
+    run(randomQuery);
+  });
 }
 
-switch (command) {
-  case 'concert':
-    concertThis();
-    break;
-  case 'spotify':
-    spotifyThis();
-    break;
-  case 'movie':
-    movieThis();
-    break;
-  case 'do-what-it-says':
-    doWhatItSays();
-    break;
-  default:
-    console.log("Not a valid query");
+function run(randomQuery) {
+  switch (command) {
+    case 'concert':
+      concertThis(randomQuery);
+      break;
+    case 'spotify':
+      spotifyThis(randomQuery);
+      break;
+    case 'movie':
+      movieThis(randomQuery);
+      break;
+    case 'random':
+      doWhatItSays();
+      break;
+    default:
+      console.log("Not a valid query");
+  }
 }
+
+run();
