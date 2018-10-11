@@ -4,6 +4,6 @@ LIRI searches Spotify for songs, Bands in Town for concerts, and OMDB for movies
 This project was built with node, and required the use of npm to initialize a package.json and install the dotenv, moment, node-spotify-api, and request packages.
 
 You can see it in action below:
-![demo video](liri.gif)
+[![LIRI demo video](https://img.youtube.com/vi/HDRBOmzki7M/0.jpg)](https://youtu.be/HDRBOmzki7M)
 
 For more information, email [cadin.mcqueen@gmail.com](mailto:cadin.mcqueen@gmail.com).
