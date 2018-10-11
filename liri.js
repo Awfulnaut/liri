@@ -9,6 +9,16 @@ var spotify = new Spotify(keys.spotify);
 
 var command = process.argv[2];
 
+// Log the results both in the console aand in log.txt
+function logThis(string) {
+  fs.appendFile("log.txt", string, function(err) {
+    if (err) {
+      return console.log(err);
+    }
+    console.log(string);
+  })
+}
+
 // Pull band data
 function concertThis(artistName) {
 
@@ -26,18 +36,23 @@ function concertThis(artistName) {
     if(!error && response.statusCode === 200) {
       var artistData = JSON.parse(body);
       for (var i = 0; i < artistData.length; i++) {
-        var venueNameStr = "Venue: " + artistData[i].venue.name + "\n";
-        var locationStr = "Location: " + artistData[i].venue.city + ", " + artistData[i].venue.country + "\n";
+        var venueNameStr = "Venue: " + artistData[i].venue.name;
+        var locationStr = "Location: " + artistData[i].venue.city + ", " + artistData[i].venue.country;
         // if a region is declared, update the location to include it
         if (artistData[i].venue.region) {
-          locationStr = "Location: " + artistData[i].venue.city + ", " + artistData[i].venue.region + ", " + artistData[i].venue.country + "\n";
+          locationStr = "Location: " + artistData[i].venue.city + ", " + artistData[i].venue.region + ", " + artistData[i].venue.country;
         }
         // convert date substring to MM/DD/YYYY format using "L" format
         var date = moment(artistData[i].datetime.substring(0, 10)).format("L");
         var dateStr = "Date: " + date + "\n";
-        var separatorStr = "--------------------------";
 
-        console.log(venueNameStr, locationStr, dateStr, separatorStr)
+        var result = 
+          "\n" + venueNameStr +
+          "\n" + locationStr +
+          "\n" + dateStr +
+          "\n--------------------------\n";
+
+        logThis(result);
       }
     }
   });
@@ -74,15 +89,15 @@ function spotifyThis(trackName) {
       var previewURL = trackData[i].preview_url;
       var albumName = trackData[i].album.name;
 
-      // Log out each entry
-      console.log(
+      var result = 
         i +
         "\nArtist(s): " + artists +
         "\nSong name: " + songName +
         "\nPreview song: " + previewURL +
         "\nAlbum: " + albumName +
-        "\n---------------------------"
-      );
+        "\n---------------------------\n";
+
+      logThis(result);
     }
   })
 }
@@ -107,7 +122,6 @@ function movieThis(movieName) {
   }
 
   var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
-  console.log(queryUrl);
 
   request(queryUrl, (error, response, body) => {
     if(!error && response.statusCode === 200) {
@@ -115,7 +129,8 @@ function movieThis(movieName) {
 
       var imdbRating = movieData.Ratings[0] ? movieData.Ratings[0].Value : "N/A";
       var rottenTomatoesRating = movieData.Ratings[1] ? movieData.Ratings[1].Value : "N/A";
-      console.log(
+
+      var result = 
         "Title: " + movieData.Title + "\n" +
         "Release Year: " + movieData.Year + "\n" +
         "IMDB: " + imdbRating + "\n" +
@@ -123,34 +138,35 @@ function movieThis(movieName) {
         "Country: " + movieData.Country + "\n" +
         "Language: " + movieData.Language + "\n" +
         "Plot: " + movieData.Plot + "\n" +
-        "Actors: " + movieData.Actors + "\n"
-      );
+        "Actors: " + movieData.Actors + "\n" +
+        "---------------------------\n";
+
+      logThis(result);
     }
   });
 }
 
-// ???
 function doWhatItSays() {
-  var randomCommandArr = [];
+  var commandArr = [];
   fs.readFile("random.txt", "utf8", function(err, data){
-    randomCommandArr = data.split(" ");
-    command = randomCommandArr.shift();
-    var randomQuery = randomCommandArr.join(" ");
+    commandArr = data.split(" ");
+    command = commandArr.shift();
+    var queryFromFile = commandArr.join(" ");
 
-    run(randomQuery);
+    run(queryFromFile);
   });
 }
 
-function run(randomQuery) {
+function run(queryFromFile) {
   switch (command) {
     case 'concert':
-      concertThis(randomQuery);
+      concertThis(queryFromFile);
       break;
     case 'spotify':
-      spotifyThis(randomQuery);
+      spotifyThis(queryFromFile);
       break;
     case 'movie':
-      movieThis(randomQuery);
+      movieThis(queryFromFile);
       break;
     case 'random':
       doWhatItSays();
